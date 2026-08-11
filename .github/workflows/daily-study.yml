@@ -1,0 +1,55 @@
+name: Daily Study Progress
+
+on:
+  schedule:
+    # 11:30 PM IST every day
+    - cron: "30 23 * * *"
+      timezone: "Asia/Kolkata"
+
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-study-log:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Record today's study progress
+        run: |
+          DATE=$(date +'%Y-%m-%d')
+
+          mkdir -p progress
+
+          if [ ! -f progress/study-log.md ]; then
+            echo "# 📚 Daily Study Log" > progress/study-log.md
+            echo "" >> progress/study-log.md
+            echo "My daily learning progress." >> progress/study-log.md
+            echo "" >> progress/study-log.md
+          fi
+
+          if ! grep -q "$DATE" progress/study-log.md; then
+            echo "## $DATE" >> progress/study-log.md
+            echo "" >> progress/study-log.md
+            echo "- 📖 Study session recorded" >> progress/study-log.md
+            echo "- 🎯 Continue improving tomorrow" >> progress/study-log.md
+            echo "" >> progress/study-log.md
+          fi
+
+      - name: Commit today's progress
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add progress/study-log.md
+
+          if git diff --cached --quiet; then
+            echo "No new progress to commit."
+          else
+            git commit -m "docs: record daily study progress"
+            git push
+          fi
